@@ -1,0 +1,111 @@
+{% extends "advising_portal/base.html" %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% block content %}
+    <div class="content-section">
+
+        {% if user|has_group:"chairman" %}
+            <div align="right">
+        <button class="btn btn-danger btn-circle" type="submit" data-toggle="modal"
+                data-target="#custom-delete-modal-id"><i class="fas fa-trash"></i></button>
+    </div>
+
+            <div class="modal" tabindex="-1" id="custom-delete-modal-id">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Course</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this course?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-outline-danger"
+                            onclick="location.href='{% url 'faculty-panel-course-delete' course_id %}'">Delete
+                    </button>
+                    <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+        {% endif %}
+
+        <br>
+
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">
+                    <strong style="display: flex; justify-content: space-between">
+                    <span>Course Details</span><a class="small" href="{% url 'faculty-panel-course-log' course_id %}">Log</a>
+                    </strong></legend>
+                {{ form|crispy }}
+
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Update</button>
+            </div>
+        </form>
+
+    </div>
+
+    <div align="right">
+        <a href="{% url 'faculty-panel-section-create' course_code %}"
+           class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-download fa-sm text-white-50"></i>Add Section</a>
+    </div>
+
+    <div class="table-responsive card shadow custom-left-table-align">
+        <table id="myTable" class="table table-striped">
+            <tbody>
+            <tr>
+                <th class="col-md-1"><b>Section No.</b></th>
+                <th class="col-md-1"><b>Instructor Initials</b></th>
+                <th class="col-md-1"><b>Instructor Full Name</b></th>
+                <th class="col-md-1"><b>Capacity</b></th>
+                <th class="col-md-1"><b>Timing</b></th>
+                <th class="col-md-1"><b>Details</b></th>
+            </tr>
+
+            <tr>
+                <td colspan="7" align="right">
+                    <form
+                            class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                        <div class="input-group custom-search-align">
+                            <input type="text" id="myInput" onkeyup="table_search(6)"
+                                   class="form-control bg-light border-0 small" placeholder="Search for..."
+                                   aria-label="Search" aria-describedby="basic-addon2">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button">
+                                    <i class="fas fa-search fa-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+
+            {% for section in sections %}
+
+                <tr>
+                    <td class="col-md-1">{{ section.section_no }}</td>
+                    <td class="col-md-1">{{ section.instructor_initials }}</td>
+                    <td class="col-md-1">{{ section.instructor_name }}</td>
+                    <td class="col-md-1">{{ section.total_students }} / {{ section.section_capacity }}</td>
+                    <td class="col-md-1">{{ section.formatted_routine }}</td>
+                    <td class="col-md-1">
+                        <button class="btn btn-outline-danger" type="submit"
+                                onclick="location.href='{% url 'faculty-panel-section-detail' section.section_id %}'">
+                            Update
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock content %}

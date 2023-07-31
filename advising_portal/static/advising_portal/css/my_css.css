@@ -1,0 +1,88 @@
+.custom-selection-card-design {
+  height: 38px;
+  justify-content: end;
+  font-size: 1rem;
+}
+
+.custom-search-align {
+    padding-right: 13px;
+}
+
+.custom-fix-width {
+    width: 1300px;
+    margin: 0 auto;
+}
+
+.custom-left-table-align {
+    /*max-height: 500px;*/
+    margin-top: 40px;
+}
+
+.right-table-align {
+    margin-top: 40px;
+}
+
+.btn-fix-width {
+    width: 200px;
+    margin-right:10px;
+    height: 50px;
+}
+
+.custom-left-table-align th {
+  background-color: #4e73df;
+  /*background-color: #e3f2fd;*/
+  color: #ffffff;
+  /*color: #000000b5;*/
+}
+
+.custom-left-table-align td {
+    color: rgba(0, 0, 0, 0.58);
+    font-weight: bold;
+}
+
+.custom-left-table-align td small {
+    color: rgba(0, 0, 0, 0.58);
+    font-weight: bold;
+}
+
+.right-table-align th {
+  background-color: #4e73df;
+  /*background-color: #e3f2fd;*/
+  color: #ffffff;
+  /*color: #000000b5;*/
+}
+
+.right-table-align td {
+    color: rgba(0, 0, 0, 0.58);
+    font-weight: bold;
+}
+
+.right-table-align td small {
+    color: rgba(0, 0, 0, 0.58);
+    font-weight: bold;
+}
+
+/*@media (min-device-width: 100px) and (max-device-width: 1280px) {*/
+/*    .custom-margin {*/
+/*        padding-top: 30px;*/
+/*    }*/
+/*}*/
+
+.semesters-dropdown-menu {
+    padding-bottom: 30px;
+}
+
+.no-click {
+    pointer-events: none;
+}
+
+.account-img {
+  height: 125px;
+  width: 125px;
+  margin-right: 20px;
+  margin-bottom: 16px;
+}
+
+.account-heading {
+  font-size: 2.5rem;
+}
