@@ -1,4 +1,5 @@
 import re
+import json
 import pandas as pd
 from datetime import datetime
 from urllib.parse import urlencode
@@ -7,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import Sum, Q
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.utils import timezone
@@ -1379,8 +1380,6 @@ def patient_report_view(request):
 
     list_df = df_specifics.to_dict(orient='records')
 
-    # print(patient_ids)
-
     test_id = request.GET.get('test_id', '')
 
     if test_id:
@@ -1401,6 +1400,28 @@ def patient_report_view(request):
     }
 
     return render(request, 'advising_portal/patient_report.html', context)
+
+
+def generate_report(request):
+
+    print("test")
+    patient_id = request.GET.get('patient_id', None)
+    test_id = int(request.GET.get('test_id', None))
+
+    print('test')
+    print(patient_id)
+    print(test_id)
+
+    if patient_id and test_id:
+        report = generate_medical_report(patient_id, test_id)
+
+        print(report)
+
+        response_data = {'success': True, 'report': report}
+    else:
+        response_data = {'success': False, 'error': 'Invalid parameters'}
+
+    return JsonResponse(response_data)
 
 
 def insert_test_data(request):

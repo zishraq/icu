@@ -55,22 +55,23 @@
                         <th class="col-md-1"><b>Test ID</b></th>
                         <th class="col-md-1"><b>Heart Rate</b></th>
                         <th class="col-md-1"><b>Oxygen Sat</b></th>
-                        <th class="col-md-1"><b>Temperature</b></th>
+                        <th class="col-md-1"><b>Temp</b></th>
                         <th class="col-md-1"><b>SBP</b></th>
+                        <th class="col-md-1" hidden><b>Patient ID</b></th>
                         <th class="col-md-1"><b>Generate</b></th>
                     </tr>
 
                     {% for data in patient_stats %}
 
                         <tr>
-                            <td class="col-md-1">{{ data.test_id }}</td>
+                            <td class="col-md-1 test-id">{{ data.test_id }}</td>
                             <td class="col-md-1">{{ data.HR }}</td>
                             <td class="col-md-1">{{ data.O2Sat }}</td>
                             <td class="col-md-1">{{ data.Temp }}</td>
                             <td class="col-md-1">{{ data.SBP }}</td>
+                            <td class="col-md-1 patient-id" hidden>{{ data.patient_id }}</td>
                             <td class="col-md-1">
-                                <button class="btn btn-outline-danger" type="submit"
-                                        onclick="location.href='{% url 'faculty-panel-course-detail' data.test_id %}'">
+                                <button class="btn btn-outline-danger" type="submit">
                                     Report
                                 </button>
                             </td>
@@ -81,5 +82,77 @@
             </div>
         </div>
     </div>
+
+    <!-- Add this modal section at the end of the template -->
+    <div class="modal fade" id="reportModal" tabindex="-1" role="dialog" aria-labelledby="reportModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportModalLabel"><strong>Medical Report</strong></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="reportContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{#    <div id="myElement" data-csrf-token="{% csrf_token %}"></div>#}
+
+    <script>
+        // Function to handle the AJAX request for generating the report
+        function generateReport(patientId, testId) {
+            console.log(patientId);
+            console.log(testId);
+
+            const url = "{% url 'generate-report' %}?patient_id=" + patientId + "&test_id=" + testId;
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the content of the modal with the report data
+                    const reportContent = document.getElementById('reportContent');
+                    reportContent.textContent = JSON.stringify(data.report, null, 2);
+                    // Show the modal
+                    const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+                    reportModal.show();
+                } else {
+                    // Handle error if needed
+                    console.error(data.error);
+                }
+            })
+            .catch(error => {
+                // Handle error if needed
+                console.error(error);
+            });
+        }
+
+        // Attach a click event listener to the "Report" buttons in the table
+        const reportButtons = document.querySelectorAll('.btn-outline-danger');
+        reportButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Get the patient ID and test ID from the button's row
+                const patientId = button.closest('tr').querySelector('.patient-id').textContent;
+                const testId = button.closest('tr').querySelector('.test-id').textContent;
+
+                // Call the function to generate the report
+                generateReport(patientId, testId);
+            });
+        });
+    </script>
 
 {% endblock content %}
