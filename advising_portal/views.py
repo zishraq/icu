@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 from datetime import datetime
 from urllib.parse import urlencode
 
@@ -22,6 +23,7 @@ from django.contrib.auth.decorators import login_required
 
 from advising_portal.utilities import student_id_regex, ADDED, DROPPED, get_referer_parameter, \
     get_conflicting_sections_with_requested_section, text_shorten, APPROVED, REJECTED, PENDING
+from generate_report import column_names, generate_medical_report
 from users.decorators import allowed_users
 
 
@@ -1347,6 +1349,58 @@ def student_detail_view(request, student_id):
     }
 
     return render(request, 'advising_portal/student_detail.html', context)
+
+
+@login_required
+@allowed_users(allowed_roles=['faculty', 'chairman'])
+def patient_report_view(request):
+    user_id = request.user.id
+
+    df = pd.read_csv('dataset/patients_detailed_data_specs.csv')
+
+    df_specifics = df[column_names]
+
+    df_patients = df_specifics.drop_duplicates(subset='patient_id', keep='first')[
+        ['patient_id', 'name', 'Age', 'Gender']
+    ]
+
+    patients = df_patients.to_dict(orient='records')
+    print(patients)
+
+    patient_id = request.GET.get('patient_id', patients[0]['patient_id'])
+    patient_name = df_patients[df_patients.patient_id == patient_id]['name'].unique()[0]
+    age = df_patients[df_patients.patient_id == patient_id]['Age'].unique()[0]
+    gender = df_patients[df_patients.patient_id == patient_id]['Gender'].unique()[0]
+
+    print(patient_name)
+    print(patients)
+
+    df_specifics = df_specifics[df_specifics.patient_id == patient_id]
+
+    list_df = df_specifics.to_dict(orient='records')
+
+    # print(patient_ids)
+
+    test_id = request.GET.get('test_id', '')
+
+    if test_id:
+        report = generate_medical_report(patient_id, test_id)
+
+    else:
+        report = None
+
+    context = {
+        'patient_stats': list_df,
+        'patients': patients,
+        'patient_id': patient_id,
+        'patient_name': patient_name,
+        'age': age,
+        'gender': gender,
+        'room_name': str(user_id),
+        'report': report
+    }
+
+    return render(request, 'advising_portal/patient_report.html', context)
 
 
 def insert_test_data(request):

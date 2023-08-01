@@ -39,6 +39,7 @@ urlpatterns = [
     path('student-list/', views.student_list_view, name='faculty-panel-student-list'),
     path('student-detail/<student_id>', views.student_detail_view, name='faculty-panel-student-detail'),
     # path('student-create/', views.semester_create, name='student-panel-semester-create'),
+    path('patient-reports', views.patient_report_view, name='lab-patient-report'),
 
     path('assigned-sections/', views.assigned_sections, name='faculty-panel-assigned-sections')
 ]
