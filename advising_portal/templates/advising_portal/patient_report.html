@@ -18,13 +18,6 @@
             </div>
         </div>
 
-{#        {% if user|has_group:"chairman" %}#}
-{#            <div class="col-4" align="right">#}
-{#                <a href="{% url 'faculty-panel-course-create' %}"#}
-{#                   class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">#}
-{#                    <i class="fas fa-download fa-sm text-white-50"></i>Create Course</a>#}
-{#            </div>#}
-{#        {% endif %}#}
     </div>
 
     <div class="row">
@@ -57,8 +50,17 @@
                         <th class="col-md-1"><b>Oxygen Sat</b></th>
                         <th class="col-md-1"><b>Temp</b></th>
                         <th class="col-md-1"><b>SBP</b></th>
+                        <th class="col-md-1"><b>MAP</b></th>
+                        <th class="col-md-1"><b>DBP</b></th>
+                        <th class="col-md-1"><b>Resp</b></th>
+                        <th class="col-md-1"><b>EtCO2</b></th>
+                        <th class="col-md-1"><b>BaseExcess</b></th>
+                        <th class="col-md-1"><b>HCO3</b></th>
+                        <th class="col-md-1"><b>FiO2</b></th>
+                        <th class="col-md-1"><b>PaCO2</b></th>
                         <th class="col-md-1" hidden><b>Patient ID</b></th>
-                        <th class="col-md-1"><b>Generate</b></th>
+<!--                        <th class="col-md-1"><b>PDF</b></th>-->
+                        <th class="col-md-1"><b>Report</b></th>
                     </tr>
 
                     {% for data in patient_stats %}
@@ -69,10 +71,23 @@
                             <td class="col-md-1">{{ data.O2Sat }}</td>
                             <td class="col-md-1">{{ data.Temp }}</td>
                             <td class="col-md-1">{{ data.SBP }}</td>
-                            <td class="col-md-1 patient-id" hidden>{{ data.patient_id }}</td>
+                            <td class="col-md-1">{{ data.MAP }}</td>
+                            <td class="col-md-1">{{ data.DBP }}</td>
+                            <td class="col-md-1">{{ data.Resp }}</td>
+                            <td class="col-md-1">{{ data.EtCO2 }}</td>
+                            <td class="col-md-1">{{ data.BaseExcess }}</td>
+                            <td class="col-md-1">{{ data.HCO3 }}</td>
+                            <td class="col-md-1">{{ data.FiO2 }}</td>
+                            <td class="col-md-1">{{ data.PaCO2 }}</td>
+                            <td class="col-md-1 patient-id" hidden>{{ data.patient_id_id }}</td>
+<!--                            <td class="col-md-1">-->
+<!--                                <button class="btn btn-outline-danger generate-pdf">-->
+<!--                                    PDF-->
+<!--                                </button>-->
+<!--                            </td>-->
                             <td class="col-md-1">
                                 <button class="btn btn-outline-danger" type="submit">
-                                    Report
+                                    Generate
                                 </button>
                             </td>
                         </tr>
@@ -98,16 +113,14 @@
                     <div id="reportContent"></div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-danger generate-pdf" data-dismiss="modal">PDF</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
-{#    <div id="myElement" data-csrf-token="{% csrf_token %}"></div>#}
-
     <script>
-        // Function to handle the AJAX request for generating the report
         function generateReport(patientId, testId) {
             console.log(patientId);
             console.log(testId);
@@ -124,35 +137,80 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update the content of the modal with the report data
                     const reportContent = document.getElementById('reportContent');
-                    reportContent.textContent = JSON.stringify(data.report, null, 2);
-                    // Show the modal
+                    const report_data = data.report;
+
+                    function createContentElement(text) {
+                        const div = document.createElement('div');
+                        div.innerHTML = text.replace(/\n/g, "<br>");
+                        return div;
+                    }
+
+                    var childElement = reportContent.querySelector("h2");
+
+                    if (childElement) {
+                        reportContent.removeChild(childElement);
+                    }
+
+                    var childElement = reportContent.querySelector("div");
+
+                    if (childElement) {
+                        reportContent.removeChild(childElement);
+                    }
+
+                    const titleElement = document.createElement('h2');
+                    titleElement.textContent = data.report.title;
+                    reportContent.appendChild(titleElement);
+
+                    const contentElement = createContentElement(report_data);
+                    reportContent.appendChild(contentElement);
+
                     const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
                     reportModal.show();
                 } else {
-                    // Handle error if needed
                     console.error(data.error);
                 }
             })
             .catch(error => {
-                // Handle error if needed
                 console.error(error);
             });
         }
 
-        // Attach a click event listener to the "Report" buttons in the table
         const reportButtons = document.querySelectorAll('.btn-outline-danger');
         reportButtons.forEach(button => {
             button.addEventListener('click', () => {
-                // Get the patient ID and test ID from the button's row
                 const patientId = button.closest('tr').querySelector('.patient-id').textContent;
                 const testId = button.closest('tr').querySelector('.test-id').textContent;
 
-                // Call the function to generate the report
                 generateReport(patientId, testId);
             });
         });
+
+        const boxes = Array.from(document.getElementsByClassName('generate-pdf'));
+
+        boxes.forEach(box => {
+            box.addEventListener('click', function handleClick(event) {
+                window.jsPDF = window.jspdf.jsPDF;
+                var doc = new jsPDF();
+
+                const reportContent = document.getElementById('reportContent');
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica');
+                doc.setTextColor(0, 0, 0);
+
+                doc.html(reportContent, {
+                    callback: function (doc) {
+                        doc.save('report.pdf');
+                    },
+                    x: 10,
+                    y: 10,
+                    width: 170,
+                    windowWidth: 650
+                });
+            });
+        });
+
     </script>
 
 {% endblock content %}

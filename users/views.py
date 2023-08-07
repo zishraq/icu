@@ -27,10 +27,6 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-
-                if request.user.groups.all()[0].name == 'student':
-                    messages.success(request, 'Welcome to East West University Student Portal!')
-
                 return redirect('student-panel-home')
 
         else:

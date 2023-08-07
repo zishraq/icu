@@ -410,3 +410,68 @@ class SectionsRequested(models.Model):
 
     requested_at = models.DateTimeField(default=datetime.now())
     updated_at = models.DateTimeField(default=None, null=True)
+
+
+class Patient(models.Model):
+    patient_id = models.CharField(max_length=10, primary_key=True)
+    name = models.TextField()
+    Age = models.IntegerField()
+    Gender = models.CharField(max_length=6)
+
+
+class LabResult(models.Model):
+    patient_id = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    test_id = models.IntegerField()
+    HR = models.IntegerField(null=True)
+    HR_label = models.TextField(null=True)
+    O2Sat = models.IntegerField(null=True)
+    O2Sat_label = models.TextField(null=True)
+    Temp = models.FloatField(null=True)
+    Temp_label = models.TextField(null=True)
+    SBP = models.IntegerField(null=True)
+    SBP_label = models.TextField(null=True)
+    MAP = models.IntegerField(null=True)
+    MAP_label = models.TextField(null=True)
+    DBP = models.IntegerField(null=True)
+    DBP_label = models.TextField(null=True)
+    Resp = models.IntegerField(null=True)
+    Resp_label = models.TextField(null=True)
+    EtCO2 = models.IntegerField(null=True)
+    EtCO2_label = models.TextField(null=True)
+    BaseExcess = models.FloatField(null=True)
+    BaseExcess_label = models.TextField(null=True)
+    HCO3 = models.FloatField(null=True)
+    HCO3_label = models.TextField(null=True)
+    FiO2 = models.FloatField(null=True)
+    FiO2_label = models.TextField(null=True)
+    PaCO2 = models.FloatField(null=True)
+    PaCO2_label = models.TextField(null=True)
+    SaO2 = models.FloatField(null=True)
+    SaO2_label = models.TextField(null=True)
+    AST = models.IntegerField(null=True)
+    AST_label = models.TextField(null=True)
+    BUN = models.FloatField(null=True)
+    BUN_label = models.TextField(null=True)
+    Alkalinephos = models.IntegerField(null=True)
+    Alkalinephos_label = models.TextField(null=True)
+    Calcium = models.FloatField(null=True)
+    Calcium_label = models.TextField(null=True)
+    Glucose = models.FloatField(null=True)
+    Glucose_label = models.TextField(null=True)
+    Bilirubin_total = models.FloatField(null=True)
+    Bilirubin_total_label = models.TextField(null=True)
+    Hgb = models.FloatField(null=True)
+    Hgb_label = models.TextField(null=True)
+    Platelets = models.FloatField(null=True)
+    Platelets_label = models.TextField(null=True)
+    SepsisLabel = models.CharField(max_length=3)
+    report = models.TextField()
+
+    class Meta:
+        unique_together = (('patient_id', 'test_id'),)
+
+
+class ColumnDetails(models.Model):
+    column_short = models.CharField(max_length=20, primary_key=True)
+    details = models.TextField()
+    unit = models.TextField()

@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
@@ -19,12 +19,12 @@ from django.contrib.admin.models import LogEntry, ADDITION
 from advising_portal.forms import SectionRequestForm, CreateCourseForm, CreateSemesterForm, UpdateSectionForm, \
     CreateSectionForm, UpdateSectionRequestForm, FacultyStudentUpdateForm, FacultyStudentSearchForm
 from advising_portal.models import Course, Section, CoursesTaken, Semester, Student, Routine, TimeSlot, WeekSlot, \
-    SectionsRequested, Grade, Faculty
+    SectionsRequested, Grade, Faculty, Patient, LabResult, ColumnDetails
 from django.contrib.auth.decorators import login_required
 
 from advising_portal.utilities import student_id_regex, ADDED, DROPPED, get_referer_parameter, \
     get_conflicting_sections_with_requested_section, text_shorten, APPROVED, REJECTED, PENDING
-from generate_report import column_names, generate_medical_report
+from generate_report import column_names, generate_medical_report, generate_report_from_template
 from users.decorators import allowed_users
 
 
@@ -1351,34 +1351,66 @@ def student_detail_view(request, student_id):
 
     return render(request, 'advising_portal/student_detail.html', context)
 
+# @login_required
+# @allowed_users(allowed_roles=['faculty', 'chairman'])
+# def patient_report_view(request):
+#     user_id = request.user.id
+#
+#     df = pd.read_csv('dataset/patients_detailed_data_specs.csv')
+#
+#     df_specifics = df[column_names]
+#
+#     df_patients = df_specifics.drop_duplicates(subset='patient_id', keep='first')[
+#         ['patient_id', 'name', 'Age', 'Gender']
+#     ]
+#
+#     patients = df_patients.to_dict(orient='records')
+#     print(patients)
+#
+#     patient_id = request.GET.get('patient_id', patients[0]['patient_id'])
+#     patient_name = df_patients[df_patients.patient_id == patient_id]['name'].unique()[0]
+#     age = df_patients[df_patients.patient_id == patient_id]['Age'].unique()[0]
+#     gender = df_patients[df_patients.patient_id == patient_id]['Gender'].unique()[0]
+#
+#     print(patient_name)
+#     print(patients)
+#
+#     df_specifics = df_specifics[df_specifics.patient_id == patient_id]
+#
+#     list_df = df_specifics.to_dict(orient='records')
+#
+#     test_id = request.GET.get('test_id', '')
+#
+#     if test_id:
+#         report = generate_medical_report(patient_id, test_id)
+#
+#     else:
+#         report = None
+#
+#     context = {
+#         'patient_stats': list_df,
+#         'patients': patients,
+#         'patient_id': patient_id,
+#         'patient_name': patient_name,
+#         'age': age,
+#         'gender': gender,
+#         'room_name': str(user_id),
+#         'report': report
+#     }
+#
+#     return render(request, 'advising_portal/patient_report.html', context)
+
 
 @login_required
-@allowed_users(allowed_roles=['faculty', 'chairman'])
 def patient_report_view(request):
     user_id = request.user.id
 
-    df = pd.read_csv('dataset/patients_detailed_data_specs.csv')
+    patients = list(Patient.objects.all())
 
-    df_specifics = df[column_names]
-
-    df_patients = df_specifics.drop_duplicates(subset='patient_id', keep='first')[
-        ['patient_id', 'name', 'Age', 'Gender']
-    ]
-
-    patients = df_patients.to_dict(orient='records')
-    print(patients)
-
-    patient_id = request.GET.get('patient_id', patients[0]['patient_id'])
-    patient_name = df_patients[df_patients.patient_id == patient_id]['name'].unique()[0]
-    age = df_patients[df_patients.patient_id == patient_id]['Age'].unique()[0]
-    gender = df_patients[df_patients.patient_id == patient_id]['Gender'].unique()[0]
-
-    print(patient_name)
-    print(patients)
-
-    df_specifics = df_specifics[df_specifics.patient_id == patient_id]
-
-    list_df = df_specifics.to_dict(orient='records')
+    patient_id = request.GET.get('patient_id', patients[0].patient_id)
+    patient_name = patients[0].name
+    age = patients[0].Age
+    gender = patients[0].Gender
 
     test_id = request.GET.get('test_id', '')
 
@@ -1388,8 +1420,12 @@ def patient_report_view(request):
     else:
         report = None
 
+    lab_tests = list(LabResult.objects.filter(
+        patient_id_id=patient_id
+    ))
+
     context = {
-        'patient_stats': list_df,
+        'patient_stats': lab_tests,
         'patients': patients,
         'patient_id': patient_id,
         'patient_name': patient_name,
@@ -1403,8 +1439,6 @@ def patient_report_view(request):
 
 
 def generate_report(request):
-
-    print("test")
     patient_id = request.GET.get('patient_id', None)
     test_id = int(request.GET.get('test_id', None))
 
@@ -1413,15 +1447,73 @@ def generate_report(request):
     print(test_id)
 
     if patient_id and test_id:
-        report = generate_medical_report(patient_id, test_id)
+        # report = generate_medical_report(patient_id, test_id)
 
-        print(report)
+        report = LabResult.objects.filter(
+            patient_id=patient_id,
+            test_id=test_id
+        ).first()
+
+        report = report.report
 
         response_data = {'success': True, 'report': report}
     else:
         response_data = {'success': False, 'error': 'Invalid parameters'}
 
     return JsonResponse(response_data)
+
+
+def insert_medical_data(request):
+    df_specifics = pd.read_csv('dataset/patients_detailed_data_specs.csv')
+    list_df = df_specifics.to_dict(orient='records')
+
+    user_data = {
+        'username': 'admin',
+        'password': 'admin',
+        'is_superuser': True,
+        'is_staff': True
+    }
+    user = User.objects.create_user(**user_data)
+    user.save()
+
+    from generate_report import column_details, column_names, column_units
+
+    for data in list_df:
+        patient_exists = Patient.objects.filter(
+            patient_id=data['patient_id']
+        ).exists()
+
+        if not patient_exists:
+            patient_data = {
+                'patient_id': data['patient_id'],
+                'name': data['name'],
+                'Age': data['Age'],
+                'Gender': data['Gender']
+            }
+            patient_data_create = Patient.objects.create(**patient_data)
+            patient_data_create.save()
+
+        data['patient_id_id'] = data.pop('patient_id')
+        data['report'] = generate_report_from_template(data)
+        data.pop('name')
+        data.pop('Age')
+        data.pop('Gender')
+
+        lab_result_create = LabResult.objects.create(**data)
+        lab_result_create.save()
+
+        # print(data)
+
+    for i, j, k in zip(column_names, column_details, column_units):
+        column_data = {
+            'column_short': i,
+            'details': j,
+            'unit': k
+        }
+        column_data_create = ColumnDetails.objects.create(**column_data)
+        column_data_create.save()
+
+    return HttpResponse('Done')
 
 
 def insert_test_data(request):
